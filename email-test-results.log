@@ -1,0 +1,25 @@
+=== Email Service Configuration Test ===
+
+1. Loading environment variables from .env file:
+   ✓ Environment variables loaded
+
+2. Validating email configuration:
+   ✓ All required email configuration variables are set
+
+3. Initializing Email Service:
+   ✓ Email service initialized
+
+4. Waiting for SMTP connection verification...
+
+5. Attempting to send test email:
+Email service: Transporter not verified, attempting to verify...
+Email service: SMTP connection verified successfully
+Email service: SMTP connection verified successfully
+Email sent successfully: {
+  to: 'vmercel@gmail.com',
+  subject: 'Email Service Test',
+  messageId: '<b4f9281d-d222-2652-1155-d699c93e2b11@gmail.com>'
+}
+   ✓ Test email sent successfully!
+
+=== Test Complete ===
