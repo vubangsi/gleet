@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  phone          String?
+  passwordHash   String
+  isVerified     Boolean   @default(false)
+  githubToken    String?
+  githubUsername String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  sessions       Session[]
+  verificationTokens VerificationToken[]
+  leetcodeSolutions  LeetcodeSolution[]
+  contributions  Contribution[]
+  agentTasks     AgentTask[]
+  
+  @@map("users")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id      String   @id @default(cuid())
+  email   String
+  token   String   @unique
+  expires DateTime
+  userId  String?
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([email, token])
+  @@map("verification_tokens")
+}
+
+model LeetcodeProblem {
+  id          String   @id @default(cuid())
+  leetcodeId  Int      @unique
+  title       String
+  difficulty  String   // Easy, Medium, Hard
+  category    String   // Array, String, Tree, etc.
+  tags        String   // JSON array of tags
+  description String
+  constraints String?
+  examples    String   // JSON array of examples
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  solutions   LeetcodeSolution[]
+
+  @@map("leetcode_problems")
+}
+
+model LeetcodeSolution {
+  id          String   @id @default(cuid())
+  userId      String
+  problemId   String
+  solution    String   // Markdown content
+  language    String   // Programming language
+  complexity  String?  // Time/Space complexity analysis
+  explanation String?  // Detailed explanation
+  githubPath  String?  // Path in user's GitHub repo
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem     LeetcodeProblem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@map("leetcode_solutions")
+}
+
+model OpenSourceProject {
+  id          String   @id @default(cuid())
+  name        String
+  fullName    String   @unique // owner/repo
+  description String?
+  language    String?
+  stars       Int      @default(0)
+  forks       Int      @default(0)
+  issues      Int      @default(0)
+  difficulty  String   // Beginner, Intermediate, Advanced
+  tags        String   // JSON array of tags
+  githubUrl   String
+  lastAnalyzed DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  contributions Contribution[]
+
+  @@map("open_source_projects")
+}
+
+model Contribution {
+  id          String   @id @default(cuid())
+  userId      String
+  projectId   String
+  type        String   // PR, Issue, Documentation, etc.
+  title       String
+  description String?
+  githubUrl   String?
+  status      String   // Planned, InProgress, Completed, Merged
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     OpenSourceProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("contributions")
+}
+
+model Agent {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        String   // LeetcodeSolver, OpenSourceContributor, ProfileEnhancer
+  description String?
+  isActive    Boolean  @default(true)
+  config      String   // JSON configuration
+  schedule    String?  // Cron expression
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tasks       AgentTask[]
+
+  @@map("agents")
+}
+
+model AgentTask {
+  id          String   @id @default(cuid())
+  agentId     String
+  userId      String
+  type        String   // LeetcodeSolution, OpenSourceContribution, etc.
+  status      String   // Pending, InProgress, Completed, Failed
+  input       String?  // JSON input data
+  output      String?  // JSON output data
+  error       String?
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  agent       Agent    @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("agent_tasks")
+}
+
+model DomainEvent {
+  id          String   @id @default(cuid())
+  eventId     String   @unique
+  aggregateId String
+  eventType   String
+  payload     String   // JSON payload
+  version     Int      @default(1)
+  occurredOn  DateTime
+  processedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  @@index([aggregateId])
+  @@index([eventType])
+  @@index([occurredOn])
+  @@map("domain_events")
+}
+
+model EmailTemplate {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  subject     String
+  htmlContent String
+  textContent String?
+  variables   String?  // JSON array of template variables
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("email_templates")
+}
